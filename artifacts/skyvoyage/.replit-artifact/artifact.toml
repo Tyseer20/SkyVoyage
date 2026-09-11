@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "SkyVoyage Travel Agency"
+description = "A polished travel booking experience for discovering flights, preparing hotel stays, completing passenger checkout, and managing bookings."
+version = "1.0.0"
+id = "artifacts/skyvoyage"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19817
+
+[services.development]
+run = "pnpm --filter @workspace/skyvoyage run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/skyvoyage", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/skyvoyage/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19817"
+BASE_PATH = "/"

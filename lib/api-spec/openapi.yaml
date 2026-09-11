@@ -1,0 +1,547 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: flights
+    description: Flight discovery and search
+  - name: places
+    description: Airport and city suggestions
+  - name: destinations
+    description: Featured destination content
+  - name: bookings
+    description: Customer booking management
+  - name: hotels
+    description: Hotel discovery and booking
+  - name: trips
+    description: Saved trips and favorite destinations
+  - name: payments
+    description: Secure payment checkout
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /destinations:
+    get:
+      operationId: listDestinations
+      tags: [destinations]
+      summary: List featured destinations
+      responses:
+        "200":
+          description: Featured destinations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Destination"
+  /flights/search:
+    get:
+      operationId: searchFlights
+      tags: [flights]
+      summary: Search available flights
+      parameters:
+        - name: origin
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: destination
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: departureDate
+          in: query
+          required: true
+          schema: { type: string }
+        - name: returnDate
+          in: query
+          schema: { type: ["string", "null"] }
+        - name: tripType
+          in: query
+          schema:
+            type: string
+            enum: [round-trip, one-way]
+            default: round-trip
+        - name: passengers
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 9, default: 1 }
+        - name: cabin
+          in: query
+          schema:
+            type: string
+            enum: [economy, premium-economy, business, first]
+            default: economy
+        - name: stops
+          in: query
+          schema: { type: string, enum: [all, direct, one-stop, two-plus], default: all }
+        - name: maxPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+      responses:
+        "200":
+          description: Matching flights
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FlightSearchResponse"
+  /places/suggestions:
+    get:
+      operationId: listPlaceSuggestions
+      tags: [places]
+      summary: Find airports and cities by name or IATA code
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+      responses:
+        "200":
+          description: Matching places
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceSuggestionsResponse"
+  /hotels/search:
+    get:
+      operationId: searchHotels
+      tags: [hotels]
+      summary: Search available hotels
+      parameters:
+        - name: destination
+          in: query
+          required: true
+          schema: { type: string, minLength: 2 }
+        - name: checkIn
+          in: query
+          required: true
+          schema: { type: string }
+        - name: checkOut
+          in: query
+          required: true
+          schema: { type: string }
+        - name: guests
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 12, default: 2 }
+        - name: maxPrice
+          in: query
+          schema: { type: number, minimum: 0 }
+        - name: minRating
+          in: query
+          schema: { type: number, minimum: 0, maximum: 5 }
+      responses:
+        "200":
+          description: Matching hotels
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HotelSearchResponse"
+  /bookings:
+    get:
+      operationId: listBookings
+      tags: [bookings]
+      summary: List customer bookings
+      responses:
+        "200":
+          description: Customer bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Booking"
+    post:
+      operationId: createBooking
+      tags: [bookings]
+      summary: Create a flight booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingInput"
+      responses:
+        "201":
+          description: Booking created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+  /bookings/summary:
+    get:
+      operationId: getBookingSummary
+      tags: [bookings]
+      summary: Get booking dashboard summary
+      responses:
+        "200":
+          description: Booking summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingSummary"
+  /hotel-bookings:
+    get:
+      operationId: listHotelBookings
+      tags: [hotels]
+      summary: List hotel bookings for the signed-in traveler
+      responses:
+        "200":
+          description: Hotel bookings
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/HotelBooking" }
+    post:
+      operationId: createHotelBooking
+      tags: [hotels]
+      summary: Create a hotel booking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/HotelBookingInput" }
+      responses:
+        "201":
+          description: Hotel booking created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HotelBooking" }
+  /saved-trips:
+    get:
+      operationId: listSavedTrips
+      tags: [trips]
+      summary: List saved trips for the signed-in traveler
+      responses:
+        "200":
+          description: Saved trips
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SavedTrip" }
+    post:
+      operationId: createSavedTrip
+      tags: [trips]
+      summary: Save a trip for later
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SavedTripInput" }
+      responses:
+        "201":
+          description: Saved trip
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavedTrip" }
+  /saved-trips/{id}:
+    delete:
+      operationId: deleteSavedTrip
+      tags: [trips]
+      summary: Delete a saved trip
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Saved trip deleted }
+  /favorites:
+    get:
+      operationId: listFavoriteDestinations
+      tags: [trips]
+      summary: List favorite destinations
+      responses:
+        "200":
+          description: Favorite destination IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/FavoriteDestination" }
+    post:
+      operationId: addFavoriteDestination
+      tags: [trips]
+      summary: Favorite a destination
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FavoriteDestinationInput" }
+      responses:
+        "201":
+          description: Favorite destination
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/FavoriteDestination" }
+  /favorites/{destinationId}:
+    delete:
+      operationId: removeFavoriteDestination
+      tags: [trips]
+      summary: Remove a favorite destination
+      parameters:
+        - name: destinationId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Favorite removed }
+  /payments/checkout-session:
+    post:
+      operationId: createCheckoutSession
+      tags: [payments]
+      summary: Create a Stripe Checkout session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutSessionInput" }
+      responses:
+        "200":
+          description: Stripe Checkout session
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CheckoutSession" }
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Destination:
+      type: object
+      properties:
+        id: { type: string }
+        city: { type: string }
+        country: { type: string }
+        airportCode: { type: string }
+        tagline: { type: string }
+        imageUrl: { type: string }
+        averageFare: { type: number }
+      required: [id, city, country, airportCode, tagline, imageUrl, averageFare]
+    Flight:
+      type: object
+      properties:
+        id: { type: string }
+        airline: { type: string }
+        airlineCode: { type: string }
+        flightNumber: { type: string }
+        originCity: { type: string }
+        originCode: { type: string }
+        destinationCity: { type: string }
+        destinationCode: { type: string }
+        departureTime: { type: string }
+        arrivalTime: { type: string }
+        duration: { type: string }
+        stops: { type: integer, minimum: 0 }
+        price: { type: number }
+        cabin: { type: string }
+        baggage: { type: string }
+        refundable: { type: boolean }
+        departureDate: { type: string }
+        logoColor: { type: string }
+      required:
+        [id, airline, airlineCode, flightNumber, originCity, originCode,
+         destinationCity, destinationCode, departureTime, arrivalTime,
+         duration, stops, price, cabin, baggage, refundable, departureDate,
+         logoColor]
+    FlightSearchResponse:
+      type: object
+      properties:
+        flights:
+          type: array
+          items: { $ref: "#/components/schemas/Flight" }
+        search:
+          $ref: "#/components/schemas/SearchCriteria"
+        totalResults: { type: integer }
+      required: [flights, search, totalResults]
+    PlaceSuggestion:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        cityName: { type: string }
+        iataCode: { type: string }
+        countryCode: { type: string }
+        type: { type: string, enum: [airport, city] }
+      required: [id, name, cityName, iataCode, countryCode, type]
+    PlaceSuggestionsResponse:
+      type: object
+      properties:
+        places:
+          type: array
+          items: { $ref: "#/components/schemas/PlaceSuggestion" }
+      required: [places]
+    SearchCriteria:
+      type: object
+      properties:
+        origin: { type: string }
+        destination: { type: string }
+        departureDate: { type: string }
+        returnDate: { type: ["string", "null"] }
+        tripType: { type: string }
+        passengers: { type: integer }
+        cabin: { type: string }
+      required: [origin, destination, departureDate, returnDate, tripType, passengers, cabin]
+    Passenger:
+      type: object
+      properties:
+        fullName: { type: string }
+        email: { type: string }
+        phone: { type: string }
+        documentNumber: { type: string }
+      required: [fullName, email, phone, documentNumber]
+    BookingInput:
+      type: object
+      properties:
+        type: { type: string, enum: [flight, hotel] }
+        flightId: { type: string }
+        airline: { type: string }
+        route: { type: string }
+        travelDate: { type: string }
+        returnDate: { type: ["string", "null"] }
+        passengerCount: { type: integer, minimum: 1 }
+        passenger: { $ref: "#/components/schemas/Passenger" }
+        subtotal: { type: number, minimum: 0 }
+        taxes: { type: number, minimum: 0 }
+        total: { type: number, minimum: 0 }
+      required: [type, flightId, airline, route, travelDate, passengerCount, passenger, subtotal, taxes, total]
+    Booking:
+      allOf:
+        - $ref: "#/components/schemas/BookingInput"
+        - type: object
+          properties:
+            id: { type: string }
+            reference: { type: string }
+            status: { type: string, enum: [confirmed, pending] }
+            createdAt: { type: string }
+          required: [id, reference, status, createdAt]
+    BookingSummary:
+      type: object
+      properties:
+        upcomingCount: { type: integer }
+        confirmedCount: { type: integer }
+        totalSpent: { type: number }
+        nextTrip:
+          type: ["object", "null"]
+          properties:
+            reference: { type: string }
+            route: { type: string }
+            travelDate: { type: string }
+            status: { type: string }
+          required: [reference, route, travelDate, status]
+      required: [upcomingCount, confirmedCount, totalSpent, nextTrip]
+    Hotel:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        destination: { type: string }
+        country: { type: string }
+        rating: { type: number }
+        nightlyRate: { type: number }
+        totalPrice: { type: number }
+        amenities:
+          type: array
+          items: { type: string }
+        imageUrl: { type: string }
+        refundable: { type: boolean }
+        checkIn: { type: string }
+        checkOut: { type: string }
+        guests: { type: integer }
+      required: [id, name, destination, country, rating, nightlyRate, totalPrice, amenities, imageUrl, refundable, checkIn, checkOut, guests]
+    HotelSearchResponse:
+      type: object
+      properties:
+        hotels:
+          type: array
+          items: { $ref: "#/components/schemas/Hotel" }
+        totalResults: { type: integer }
+      required: [hotels, totalResults]
+    HotelBookingInput:
+      type: object
+      properties:
+        hotelId: { type: string }
+        propertyName: { type: string }
+        destination: { type: string }
+        checkIn: { type: string }
+        checkOut: { type: string }
+        guestCount: { type: integer, minimum: 1 }
+        guest:
+          $ref: "#/components/schemas/Passenger"
+        total: { type: number, minimum: 0 }
+      required: [hotelId, propertyName, destination, checkIn, checkOut, guestCount, guest, total]
+    HotelBooking:
+      allOf:
+        - $ref: "#/components/schemas/HotelBookingInput"
+        - type: object
+          properties:
+            id: { type: string }
+            reference: { type: string }
+            status: { type: string, enum: [confirmed, pending] }
+            createdAt: { type: string }
+          required: [id, reference, status, createdAt]
+    SavedTripInput:
+      type: object
+      properties:
+        title: { type: string }
+        kind: { type: string }
+        payload: { type: object, additionalProperties: true }
+      required: [title, kind, payload]
+    SavedTrip:
+      allOf:
+        - $ref: "#/components/schemas/SavedTripInput"
+        - type: object
+          properties:
+            id: { type: string }
+            createdAt: { type: string }
+          required: [id, createdAt]
+    FavoriteDestinationInput:
+      type: object
+      properties:
+        destinationId: { type: string }
+      required: [destinationId]
+    FavoriteDestination:
+      allOf:
+        - $ref: "#/components/schemas/FavoriteDestinationInput"
+        - type: object
+          properties:
+            id: { type: string }
+            createdAt: { type: string }
+          required: [id, createdAt]
+    CheckoutSessionInput:
+      type: object
+      properties:
+        kind: { type: string, enum: [flight, hotel] }
+        referenceId: { type: string }
+        title: { type: string }
+        amount: { type: number, minimum: 1 }
+        successUrl: { type: string }
+        cancelUrl: { type: string }
+      required: [kind, referenceId, title, amount, successUrl, cancelUrl]
+    CheckoutSession:
+      type: object
+      properties:
+        sessionId: { type: string }
+        url: { type: string }
+      required: [sessionId, url]
