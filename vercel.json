@@ -1,4 +1,16 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/api-server build"
+  "buildCommand": "pnpm --filter @workspace/api-server build",
+  "builds": [
+    {
+      "src": "api/index.mjs",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.mjs"
+    }
+  ]
 }
