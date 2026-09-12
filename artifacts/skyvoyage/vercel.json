@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://sky-voyage-api-server.vercel.app/api/:path*"
+    }
+  ]
+}
