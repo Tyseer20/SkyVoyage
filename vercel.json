@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "pnpm --filter @workspace/api-server build",
+  "buildCommand": "pnpm --filter @workspace/api-server build && cp artifacts/api-server/dist/*.mjs api/",
   "builds": [
     {
       "src": "api/index.mjs",
