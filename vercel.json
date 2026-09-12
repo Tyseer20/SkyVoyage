@@ -1,15 +1,15 @@
 {
+  "version": 2,
   "buildCommand": "pnpm --filter @workspace/api-server build",
-  "outputDirectory": "artifacts/api-server/dist",
   "functions": {
-    "artifacts/api-server/dist/index.mjs": {
+    "api/index.mjs": {
       "runtime": "nodejs22.x"
     }
   },
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "/artifacts/api-server/dist/index.mjs"
+      "source": "/(.*)",
+      "destination": "/api/index.mjs"
     }
   ]
 }
